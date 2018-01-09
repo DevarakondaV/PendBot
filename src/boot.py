@@ -42,4 +42,9 @@ def do_connect():
     else:
         print('network config:',wlan.ifconfig())
 
+    if wlan.isconnected():
+        return 1
+    else:
+        return 0
+
 
