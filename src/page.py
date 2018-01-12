@@ -1,4 +1,3 @@
-import machine
 import socket
 import os
 from html import html
@@ -13,23 +12,34 @@ s.listen(1)
 
 print('listening on',addr)
 
+
+def getIntVal(numb):
+    rtnVal="";
+    for i in numb:
+        if i.isdigit():
+            rtnVal = rtnVal+i
+
+    return(int(rtnVal))
+
 while True:
     cl, addr = s.accept()
     print('client connected from', addr)
     cl_file = cl.makefile('rwb',0)
     
-    """while True:
-        line = cl_file.readline()
-        if not line or line == b'\r\n':
-            break"""
 
     request = cl.recv(1024)
-    print(str(request))
-    #print(str(request.find('/?Dcycle')))
+    request = str(request) 
+    dcycle = request.find('/?Dcycle');  
+
+    if (dcycle == 6):
+        ind1 = dcycle+len('/?Dcycle=');
+        ind2 = ind1+3;
+        dcycle = request[ind1:ind2]
+        dcycle = getIntVal(dcycle)
 
     rows = ['<tr><td>%s</td></tr>' % str(p) for p in files]
     response = html % '\n'.join(rows)
-    #print(response)
+   
     cl.send(response)
     cl.close()
 
