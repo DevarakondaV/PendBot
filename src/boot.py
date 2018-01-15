@@ -32,6 +32,9 @@ def do_connect():
         ID = str(input("Enter SSID: "))
         Pass = str(input("Enter Pass: "))
         
+
+        #ID = "NETGEAR68"
+        #Pass = "akvira001"
         wlan.active(True)
         wlan.connect(ID,Pass)
         deadline = time.ticks_add(time.ticks_ms(),30000)
