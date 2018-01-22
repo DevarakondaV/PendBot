@@ -11,6 +11,8 @@ s.listen(1)
 
 print('listening on',addr)
 
+files = os.listdir();
+
 def LedFlash():
     global Led
     Led.low()
@@ -44,7 +46,7 @@ while True:
         ind1 = dcycle+len('/?Dcycle=');
         ind2 = ind1+3;
         dcycle = request[ind1:ind2]
-        if dycle == "brk":
+        if dcycle == "brk":
             DeactivatePins()
             break
         dcycle = getIntVal(dcycle)
