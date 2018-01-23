@@ -6,15 +6,9 @@ url: https://github.com/adamjezek98/MPU6050-ESP8266-MicroPython.git
 """
 from machine import Pin,I2C
 
-
-
-i2c = I2C(scl=Pin(4),sda=Pin(5),freq=100000)
-
-#There should only be one slave.
-s_add = i2c.scan()[0]
-
-
 class acc():
+
+    #Constructor
     def __init__(self, i2c, addr):
         self.iic = i2c
         self.addr = addr
@@ -23,6 +17,7 @@ class acc():
         self.iic.stop()
 
 
+    #Grabs Raw values from MPU6050
     def get_raw_values(self):
         self.iic.start()
         ready = 0
@@ -33,6 +28,7 @@ class acc():
         self.iic.stop()
         return a
 
+    #Gets Values in raw array
     def get_ints(self):
         b = self.get_raw_values()
         c = []
@@ -40,13 +36,13 @@ class acc():
             c.append(i)
         return c
 
-
+    # Converts the bytes to 16bit ints
     def bytes_toint(self,firstbyte,secondbyte):
         if not firstbyte & 0x80:
             return firstbyte << 8 | secondbyte
         return - (((firstbyte ^ 255) << 8) | (secondbyte ^ 255)+1)
 
-    
+    # Returns values in a map
     def get_values(self):
         raw_ints = self.get_raw_values()
         vals = {}
@@ -58,6 +54,7 @@ class acc():
         vals["GyY"] = self.bytes_toint(raw_ints[10],raw_ints[11])
         vals["GyZ"] = self.bytes_toint(raw_ints[12],raw_ints[13])
         return vals
+
 
     def val_test(self): #ONLY FOR TESTING! Also, fast reading sometimes crashes IIC
         from time import sleep
