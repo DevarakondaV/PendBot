@@ -101,8 +101,8 @@ def flash_led(ntimes):
     
     while ntimes > 0:
         Led.low()
-        utime.sleep_ms(500)
-        led.high()
+        time.sleep_ms(500)
+        Led.high()
         ntimes = ntimes-1
 
 
@@ -131,15 +131,15 @@ def write_to_file(FileName):
     f.write("Dcycle\t\tTimeStamp\t\tAx\t\tAy\t\tAz\n")
 
     #Read for 3 seconds
-    ms = utime.ticks_ms()
+    ms = time.ticks_ms()
     read_ms = ms+100 #For reading every tenth of a second
     ms = ms+3000
     aconv = 16384 #Conversion factor for readings from accelerometer
     t = 0 #Counter
-    while(ms > utime.ticks_ms()):
+    while(ms > time.ticks_ms()):
 
         #Read from accel every tenth of a minute
-        if (read_ms == utime.ticks_ms()):
+        if (read_ms == time.ticks_ms()):
             readings = accel.get_values()
             Ax = readings['AcX']
             Ay = readings['AcY']
@@ -175,6 +175,7 @@ pwmD6.duty(0)
 
 
 Led = machine.Pin(2,machine.Pin.OUT) ## LED used to show the robot is Conneceted and functioning
+Led.low()
 ##############################################################################################
 
 

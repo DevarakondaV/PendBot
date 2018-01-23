@@ -30,7 +30,7 @@ def getIntVal(numb):
 
 
 #Blink Connected
-LedFlash()
+#LedFlash()
 
 while True:
     cl, addr = s.accept()
