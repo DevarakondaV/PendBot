@@ -1,9 +1,8 @@
 import socket
 import os
 from html import html
-
-
-files = os.listdir()
+from control import *
+import utime
 
 addr = socket.getaddrinfo('0.0.0.0',80)[0][-1]
 s = socket.socket()
@@ -11,6 +10,14 @@ s.bind(addr)
 s.listen(1)
 
 print('listening on',addr)
+
+files = os.listdir();
+
+def LedFlash():
+    global Led
+    Led.low()
+    utime.sleep(2)
+    Led.high()
 
 
 def getIntVal(numb):
@@ -20,6 +27,10 @@ def getIntVal(numb):
             rtnVal = rtnVal+i
 
     return(int(rtnVal))
+
+
+#Blink Connected
+#LedFlash()
 
 while True:
     cl, addr = s.accept()
@@ -35,7 +46,11 @@ while True:
         ind1 = dcycle+len('/?Dcycle=');
         ind2 = ind1+3;
         dcycle = request[ind1:ind2]
+        if dcycle == "brk":
+            DeactivatePins()
+            break
         dcycle = getIntVal(dcycle)
+        moveRobot(dcycle)
 
     rows = ['<tr><td>%s</td></tr>' % str(p) for p in files]
     response = html % '\n'.join(rows)
