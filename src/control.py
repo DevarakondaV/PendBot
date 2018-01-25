@@ -130,28 +130,43 @@ def write_to_file(FileName):
     f.write("#############################################################################################\n")
     f.write("Dcycle\t\tTimeStamp\t\tAx\t\tAy\t\tAz\n")
 
+
+    aconv = 16384 #Conversion factor for readings for accelerometer
     #Read for 3 seconds
+
     ms = time.ticks_ms()
     read_ms = ms+100 #For reading every tenth of a second
     ms = ms+3000
-    aconv = 16384 #Conversion factor for readings from accelerometer
-    t = 0 #Counter
+    #t = 0 #Counter
+    t = time.ticks_ms()
     while(ms > time.ticks_ms()):
 
-        #Read from accel every tenth of a minute
-        if (read_ms == time.ticks_ms()):
-            readings = accel.get_values()
-            Ax = readings['AcX']
-            Ay = readings['AcY']
-            Az = readings['AcZ']
-            Ax = Ax/aconv
-            Ay = Ay/aconv
-            Az = Az/aconv
+        readings = accel.get_values()
+        Ax = readings['AcX']
+        Ay = readings['AcY']
+        Az = readings['AcZ']
 
-            write_val = str(FileName)+"\t\t"+str(t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
-            f.write(write_val)
-            read_ms = read_ms+100
-            t = t+.1
+        Ax = Ax/aconv
+        Ay = Ay/aconv
+        Az = Az/aconv
+
+        write_val = str(FileName)+"\t\t"+str(time.ticks_ms()-t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
+        f.write(write_val)
+        
+        #Read from accel every tenth of a minute
+        #if (read_ms == time.ticks_ms()):
+        #    readings = accel.get_values()
+        #    Ax = readings['AcX']
+        #    Ay = readings['AcY']
+        #    Az = readings['AcZ']
+        #    Ax = Ax/aconv
+        #    Ay = Ay/aconv
+        #    Az = Az/aconv
+
+        #    write_val = str(FileName)+"\t\t"+str(t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
+        #    f.write(write_val)
+        #    read_ms = read_ms+100
+        #    t = t+.1
 
     f.close()
     #Turing Led off

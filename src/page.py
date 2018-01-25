@@ -44,7 +44,7 @@ while True:
 
     if (dcycle == 6):
         ind1 = dcycle+len('/?Dcycle=');
-        ind2 = ind1+3;
+        ind2 = ind1+4;
         dcycle = request[ind1:ind2]
         if dcycle == "brk":
             DeactivatePins()
