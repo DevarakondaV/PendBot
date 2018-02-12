@@ -70,11 +70,19 @@ def moveRobot(dcycle):
         pwmD6.duty(0)
 
     #Will run for 3 seconds and Write to File with the name dcycle
-    write_to_file(dcycle)
+    #write_to_file(dcycle)
+
+
+    ms = time.ticks_ms();
+    ms = ms+3000;
+    po = 0
+    while(ms > time.ticks_ms()):
+        po = po+1
     
     #After 3 seconds. Return robot to standstill
     pwmD5.duty(0)
     pwmD6.duty(0)
+
 
 
 """
@@ -114,6 +122,8 @@ def flash_led(ntimes):
 def write_to_file(FileName):
     global Led
     global accel
+    global AcXoffset, AcYoffset, AcZoffset, GyXoffset, GyYoffset, GyZoffset
+    global pwmD5, pwmD6
 
     #Lighting the Led
     Led.low()
@@ -135,16 +145,40 @@ def write_to_file(FileName):
     #Read for 3 seconds
 
     ms = time.ticks_ms()
-    read_ms = ms+100 #For reading every tenth of a second
-    ms = ms+3000
-    #t = 0 #Counter
-    t = time.ticks_ms()
-    while(ms > time.ticks_ms()):
+    t = 0
+    while(ms+1000 > time.ticks_ms()):
+        readings = accel.get_values()
+
+
+        Ax = readings['AcX']-AcXoffset
+        Ay = readings['AcY']-AcYoffset
+        Az = readings['AcZ']-AcZoffset
+
+        Ax = Ax/aconv
+        Ay = Ay/aconv
+        Az = Az/aconv
+
+        write_val = str(FileName)+"\t\t"+str(time.ticks_ms()-t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
+
+        f.write(write_val)
+        t = t+1
+
+
+    if FileName < 0:
+        dcycle = abs(FileName)
+        pwmD5.duty(0)
+        pwmD6.duty(FileName)
+    else:
+        pwmD5.duty(FileName)
+        pwmD6.duty(0)
+    ms = time.ticks_ms()
+    
+    while(ms+1000 > time.ticks_ms()):
 
         readings = accel.get_values()
-        Ax = readings['AcX']
-        Ay = readings['AcY']
-        Az = readings['AcZ']
+        Ax = readings['AcX']-AcXoffset
+        Ay = readings['AcY']-AcYoffset
+        Az = readings['AcZ']-AcZoffset
 
         Ax = Ax/aconv
         Ay = Ay/aconv
@@ -152,25 +186,113 @@ def write_to_file(FileName):
 
         write_val = str(FileName)+"\t\t"+str(time.ticks_ms()-t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
         f.write(write_val)
-        
-        #Read from accel every tenth of a minute
-        #if (read_ms == time.ticks_ms()):
-        #    readings = accel.get_values()
-        #    Ax = readings['AcX']
-        #    Ay = readings['AcY']
-        #    Az = readings['AcZ']
-        #    Ax = Ax/aconv
-        #    Ay = Ay/aconv
-        #    Az = Az/aconv
+        t = t+1
+       
+    pwmD5.duty(0)
+    pwmD6.duty(0)
 
-        #    write_val = str(FileName)+"\t\t"+str(t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
-        #    f.write(write_val)
-        #    read_ms = read_ms+100
-        #    t = t+.1
+    ms = time.ticks_ms()
+    while(ms+1000 > time.ticks_ms()):
+
+        readings = accel.get_values()
+        Ax = readings['AcX']-AcXoffset
+        Ay = readings['AcY']-AcYoffset
+        Az = readings['AcZ']-AcZoffset
+
+        Ax = Ax/aconv
+        Ay = Ay/aconv
+        Az = Az/aconv
+
+        write_val = str(FileName)+"\t\t"+str(time.ticks_ms()-t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
+        f.write(write_val)
+        t = t+1
 
     f.close()
     #Turing Led off
     Led.high()
+
+
+"""
+"" Function prints accel readings
+"""
+def print_accel(ml):
+    global AcXoffset, AcYoffset, AcZoffset, GyXoffset, GyYoffset, GyZoffset
+    global accel
+
+
+    cfac = 16384
+    while(True):
+        time.sleep_ms(ml)
+        vals = accel.get_values()
+        AcX = vals["AcX"]-AcXoffset
+        AcY = vals["AcY"]-AcYoffset
+        AcZ = vals["AcZ"]-AcZoffset
+        GyX = vals["GyX"]-GyXoffset
+        GyY = vals["GyY"]-GyYoffset
+        GyZ = vals["GyZ"]-GyZoffset
+
+        AcX = AcX/cfac
+        AcY = AcY/cfac
+        AcZ = AcZ/cfac
+        GyX = GyX/131
+        GyY = GyY/131
+        GyZ = GyZ/131
+
+        print("AcX: {:5.3f}\tAcY: {:5.3f}\tAcZ: {:5.3f}\tGyX: {:5.3f}\tGyY: {:5.3f}\tGyZ: {:5.3f}".format(AcX,AcY,AcZ,GyX,GyY,GyZ))
+
+
+
+
+"""
+"This function calibrates the gyro and accel offset. Only need to run once and store values returned
+"""
+def calibrate_accel():
+    global accel
+    rtnvals = {}
+    
+    N = 1 #Sample Size
+    AvgAcX = 0
+    AvgAcY = 0
+    AvgAcZ = 0
+    AvgGyX = 0
+    AvgGyY = 0
+    AvgGyZ = 0
+    while N < 5000:
+        vals = accel.get_values()
+        nAcX = vals["AcX"] 
+        nAcY = vals["AcY"]
+        nAcZ = vals["AcZ"]
+        nGyX = vals["GyX"]
+        nGyY = vals["GyY"]
+        nGyZ = vals["GyZ"]
+
+        AvgAcX = AvgAcX + nAcX
+        AvgAcY = AvgAcY + nAcY
+        AvgAcZ = AvgAcZ + nAcZ
+        AvgGyX = AvgGyX + nGyX
+        AvgGyY = AvgGyY + nGyY
+        AvgGyZ = AvgGyZ + nGyZ
+        N = N+1
+
+    AvgAcX = AvgAcX/N
+    AvgAcY = AvgAcY/N
+    AvgAcZ = AvgAcZ/N
+    AvgGyX = AvgGyX/N
+    AvgGyY = AvgGyY/N
+    AvgGyZ = AvgGyZ/N
+
+    
+    setGyroXoffset = AvgGyX
+    setGyroYoffset = AvgGyY
+    setGyroZoffset = AvgGyZ
+    setAccXoffset = AvgAcX
+    setAccYoffset = AvgAcY
+    setAccZoffset = -16364+AvgAcZ
+
+    rtnVal = {"GyXoffset": setGyroXoffset,"GyYoffset": setGyroYoffset, "GyZoffset": setGyroZoffset,
+            "AcXoffset": setAccXoffset, "AcYoffset": setAccYoffset, "AcZoffset": setAccZoffset}
+
+    return rtnVal
 
 
 #############################################################################################
@@ -211,4 +333,10 @@ else:
 
 # accelerometer class
 accel = acc(i2c,accAddr)
+AcZoffset = 748.4766
+AcXoffset = -291.7535
+AcYoffset = -227.5296
+GyXoffset = -334.9083
+GyYoffset = 139.0406
+GyZoffset = 78.57318
 ##############################################################################################

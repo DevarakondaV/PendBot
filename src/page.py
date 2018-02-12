@@ -50,7 +50,8 @@ while True:
             DeactivatePins()
             break
         dcycle = getIntVal(dcycle)
-        moveRobot(dcycle)
+        #moveRobot(dcycle)
+        write_to_file(dcycle)
 
     rows = ['<tr><td>%s</td></tr>' % str(p) for p in files]
     response = html % '\n'.join(rows)
