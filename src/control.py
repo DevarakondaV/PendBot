@@ -59,6 +59,7 @@ def EnOrDis(val):
 def moveRobot(dcycle):
     global pwmD5    #Forwad Pin right
     global pwmD6    #Backward Pin Right
+    global PD7
     
 
     if dcycle < 0:
@@ -77,6 +78,7 @@ def moveRobot(dcycle):
     ms = ms+3000;
     po = 0
     while(ms > time.ticks_ms()):
+        print(PD7.value())
         po = po+1
     
     #After 3 seconds. Return robot to standstill
@@ -300,6 +302,7 @@ def calibrate_accel():
 #Defining pins for pwm
 PD5 = machine.Pin(14) #RIGHT WHEEL PWM
 PD6 = machine.Pin(12) #RIGHT WHEEL PWM
+PD7 = machine.Pin(13,machine.Pin.IN) #WHEEL SENSOR
 
 pwmD5 = machine.PWM(PD5)
 pwmD6 = machine.PWM(PD6)
