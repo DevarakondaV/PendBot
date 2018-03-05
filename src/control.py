@@ -73,14 +73,8 @@ def moveRobot(dcycle):
     #Will run for 3 seconds and Write to File with the name dcycle
     #write_to_file(dcycle)
 
-    
-    ms = time.ticks_ms();
-    ms = ms+5000;
-    po = 0
-    while(ms > time.ticks_ms()):
-        print(o_dot)
-        po = po+1
-    
+    write_omg_file(dcycle)
+
     #After 3 seconds. Return robot to standstill
     pwmD5.duty(0)
     pwmD6.duty(0)
@@ -100,7 +94,8 @@ def ang_vel(tmr):
     global pulse
     global o_dot
 
-    o_dot = ((pulse<<2)*3.14)/20.0;
+    #o_dot = ((pulse<<2)*3.14)/20.0
+    o_dot = (3.14*pulse)
     pulse = 0
 
 """
@@ -229,6 +224,19 @@ def write_to_file(FileName):
     #Turing Led off
     Led.high()
 
+def write_omg_file(FileName):
+    global o_dot
+    global led
+
+    f = open(str(FileName)+".txt",'w')
+    f.write("Dutycycle\tAngular Acceleration\n")
+    
+    ms = time.ticks_ms();
+    ms = ms+5000
+    while(ms > time.ticks_ms()):
+        f.write(str(FileName)+"\t"+str(o_dot)+"\n")
+
+    f.close()
 
 """
 "" Function prints accel readings
@@ -368,5 +376,5 @@ pulse = 0
 o_dot = 0
 #Timer
 tim = machine.Timer(-1)
-tim.init(period=500,mode=machine.Timer.PERIODIC,callback=ang_vel)
+tim.init(period=100,mode=machine.Timer.PERIODIC,callback=ang_vel)
 
