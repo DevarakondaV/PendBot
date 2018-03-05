@@ -59,8 +59,8 @@ def EnOrDis(val):
 def moveRobot(dcycle):
     global pwmD5    #Forwad Pin right
     global pwmD6    #Backward Pin Right
-    global PD7
-    
+    global pulse 
+    global o_dot
 
     if dcycle < 0:
         dcycle = abs(dcycle)
@@ -73,19 +73,35 @@ def moveRobot(dcycle):
     #Will run for 3 seconds and Write to File with the name dcycle
     #write_to_file(dcycle)
 
-
+    
     ms = time.ticks_ms();
-    ms = ms+3000;
+    ms = ms+5000;
     po = 0
     while(ms > time.ticks_ms()):
-        print(PD7.value())
+        print(o_dot)
         po = po+1
     
     #After 3 seconds. Return robot to standstill
     pwmD5.duty(0)
     pwmD6.duty(0)
+    
 
+"""
+"" Pin Interrump
+"""
+def interrupt_callback(p):
+    global pulse
+    pulse = pulse + 1
 
+"""
+"" Angular velocity Calc
+"""
+def ang_vel(tmr):
+    global pulse
+    global o_dot
+
+    o_dot = ((pulse<<2)*3.14)/20.0;
+    pulse = 0
 
 """
 "" Deactivate pwm Pins
@@ -303,6 +319,7 @@ def calibrate_accel():
 PD5 = machine.Pin(14) #RIGHT WHEEL PWM
 PD6 = machine.Pin(12) #RIGHT WHEEL PWM
 PD7 = machine.Pin(13,machine.Pin.IN) #WHEEL SENSOR
+PD7.irq(trigger=machine.Pin.IRQ_FALLING,handler=interrupt_callback)
 
 pwmD5 = machine.PWM(PD5)
 pwmD6 = machine.PWM(PD6)
@@ -322,20 +339,20 @@ Led.low()
 ##############################################################################################
 #I2C Communication Defintions
 #I2C com 
-i2c = machine.I2C(scl=machine.Pin(4),sda=Pin(5),freq=100000)
+#i2c = machine.I2C(scl=machine.Pin(4),sda=Pin(5),freq=100000)
 #I2C Address
-i2cDevicesAddr = i2c.scan()
+#i2cDevicesAddr = i2c.scan()
 
 ## IF there are no I2C devices,
 ## Flash LED twice and exit program
-if (len(i2cDevicesAddr) == 0):
-    flash_led(2)
-else:
-    accAddr = i2cDevicesAddr[0]
-    flash_led(3)
+#if (len(i2cDevicesAddr) == 0):
+#    flash_led(2)
+#else:
+#    accAddr = i2cDevicesAddr[0]
+#    flash_led(3)
 
 # accelerometer class
-accel = acc(i2c,accAddr)
+#accel = acc(i2c,accAddr)
 AcZoffset = 748.4766
 AcXoffset = -291.7535
 AcYoffset = -227.5296
@@ -343,3 +360,13 @@ GyXoffset = -334.9083
 GyYoffset = 139.0406
 GyZoffset = 78.57318
 ##############################################################################################
+
+
+##############################################################################################
+#Some variables
+pulse = 0
+o_dot = 0
+#Timer
+tim = machine.Timer(-1)
+tim.init(period=500,mode=machine.Timer.PERIODIC,callback=ang_vel)
+
