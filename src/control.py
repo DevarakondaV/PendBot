@@ -2,36 +2,6 @@ import machine
 import time
 from Icom import *
 """
-Pin Labels
-
-#Pin Definitions
-D0 = 16;
-D1 = 5;
-D2 = 4;
-D3 = 0;
-D4 = 2;
-D5 = 14;
-D6 = 12;
-D7 = 13;
-D8 = 15;
-D9 = 3;
-D10 = 1;
-
-
-PD5 = Pin(14,Pin.OUT) Right Wheel
-PD6 = Pin(12,Pin.OUT) Right Wheel
-PD7 = Pin(13,Pin.OUT) Left Wheel
-PD9 = Pin(3,Pin.OUT)  Left Wheel
-PD10 = Pin(1,Pin.OUT) Enable Pin
-
-
-pwmD5
-pwmD6
-pwmD7
-pwmD9
-"""
-
-"""
 ""This file defines the functions and variables responsible for complete control of the robot.
 ""
 ""
@@ -40,27 +10,16 @@ pwmD9
 #Some Functions
 
 """
-""Enables Pins on Motor Driver
-""Val: 1 means Enables 0 means disables
-"""
-def EnOrDis(val):
-    global PD7
-    if val is 1:
-        PD7.high()
-    else:
-        PD7.low()
-
-
-
-"""
 "" Moves Robot forward or backward
 "" if dcycle<0 move backwards dycle>0 move forward
 """
 def moveRobot(dcycle):
     global pwmD5    #Forwad Pin right
     global pwmD6    #Backward Pin Right
-    global pulse 
-    global o_dot
+    global f
+
+    tim = machine.Timer(-1)
+    tim.init(period=100,mode=machine.Timer.PERIODIC,callback=ang_vel)
 
     if dcycle < 0:
         dcycle = abs(dcycle)
@@ -78,8 +37,14 @@ def moveRobot(dcycle):
     #After 3 seconds. Return robot to standstill
     pwmD5.duty(0)
     pwmD6.duty(0)
+
+
+    tim.deinit()
+    f.close()
+    
     
 
+    
 """
 "" Pin Interrump
 """
@@ -93,9 +58,13 @@ def interrupt_callback(p):
 def ang_vel(tmr):
     global pulse
     global o_dot
+    global ms
+    global f
 
     #o_dot = ((pulse<<2)*3.14)/20.0
+    ms = ms+1
     o_dot = (3.14*pulse)
+    f.write(str(ms)+"\t"+str(o_dot)+"\n")
     pulse = 0
 
 """
@@ -127,116 +96,14 @@ def flash_led(ntimes):
         ntimes = ntimes-1
 
 
-
-"""
-"" Writes data values to file with filename
-""
-"""
-def write_to_file(FileName):
-    global Led
-    global accel
-    global AcXoffset, AcYoffset, AcZoffset, GyXoffset, GyYoffset, GyZoffset
-    global pwmD5, pwmD6
-
-    #Lighting the Led
-    Led.low()
-
-    #Preparing File to Read
-    f = open(str(FileName)+".txt",'w')
-    f.write("#############################################################################################\n")
-    f.write("File Contains Acceleration Data\n")
-    f.write("Accelerations are given as a multiple of g\n")
-    f.write("------------------------------------------\n")
-    f.write("First line is duty cycle\n")
-    f.write("Second line is time stamp\n")
-    f.write("Rest are accelerations\n")
-    f.write("#############################################################################################\n")
-    f.write("Dcycle\t\tTimeStamp\t\tAx\t\tAy\t\tAz\n")
-
-
-    aconv = 16384 #Conversion factor for readings for accelerometer
-    #Read for 3 seconds
-
-    ms = time.ticks_ms()
-    t = 0
-    while(ms+1000 > time.ticks_ms()):
-        readings = accel.get_values()
-
-
-        Ax = readings['AcX']-AcXoffset
-        Ay = readings['AcY']-AcYoffset
-        Az = readings['AcZ']-AcZoffset
-
-        Ax = Ax/aconv
-        Ay = Ay/aconv
-        Az = Az/aconv
-
-        write_val = str(FileName)+"\t\t"+str(time.ticks_ms()-t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
-
-        f.write(write_val)
-        t = t+1
-
-
-    if FileName < 0:
-        dcycle = abs(FileName)
-        pwmD5.duty(0)
-        pwmD6.duty(FileName)
-    else:
-        pwmD5.duty(FileName)
-        pwmD6.duty(0)
-    ms = time.ticks_ms()
-    
-    while(ms+1000 > time.ticks_ms()):
-
-        readings = accel.get_values()
-        Ax = readings['AcX']-AcXoffset
-        Ay = readings['AcY']-AcYoffset
-        Az = readings['AcZ']-AcZoffset
-
-        Ax = Ax/aconv
-        Ay = Ay/aconv
-        Az = Az/aconv
-
-        write_val = str(FileName)+"\t\t"+str(time.ticks_ms()-t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
-        f.write(write_val)
-        t = t+1
-       
-    pwmD5.duty(0)
-    pwmD6.duty(0)
-
-    ms = time.ticks_ms()
-    while(ms+1000 > time.ticks_ms()):
-
-        readings = accel.get_values()
-        Ax = readings['AcX']-AcXoffset
-        Ay = readings['AcY']-AcYoffset
-        Az = readings['AcZ']-AcZoffset
-
-        Ax = Ax/aconv
-        Ay = Ay/aconv
-        Az = Az/aconv
-
-        write_val = str(FileName)+"\t\t"+str(time.ticks_ms()-t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
-        f.write(write_val)
-        t = t+1
-
-    f.close()
-    #Turing Led off
-    Led.high()
-
 def write_omg_file(FileName):
-    global o_dot
-    global led
+    global o_dot 
 
-    f = open(str(FileName)+".txt",'w')
-    f.write("Dutycycle\tAngular Acceleration\n")
-    
-    ms = time.ticks_ms();
-    ms = ms+5000
-    while(ms > time.ticks_ms()):
-        f.write(str(FileName)+"\t"+str(o_dot)+"\n")
-
-    f.close()
+    ms_tk = time.ticks_ms();
+    p = 0;
+    while(ms_tk+5000 > time.ticks_ms()):
+        p = p+1
+    return mss,o_dots
 
 """
 "" Function prints accel readings
@@ -268,59 +135,6 @@ def print_accel(ml):
 
 
 
-
-"""
-"This function calibrates the gyro and accel offset. Only need to run once and store values returned
-"""
-def calibrate_accel():
-    global accel
-    rtnvals = {}
-    
-    N = 1 #Sample Size
-    AvgAcX = 0
-    AvgAcY = 0
-    AvgAcZ = 0
-    AvgGyX = 0
-    AvgGyY = 0
-    AvgGyZ = 0
-    while N < 5000:
-        vals = accel.get_values()
-        nAcX = vals["AcX"] 
-        nAcY = vals["AcY"]
-        nAcZ = vals["AcZ"]
-        nGyX = vals["GyX"]
-        nGyY = vals["GyY"]
-        nGyZ = vals["GyZ"]
-
-        AvgAcX = AvgAcX + nAcX
-        AvgAcY = AvgAcY + nAcY
-        AvgAcZ = AvgAcZ + nAcZ
-        AvgGyX = AvgGyX + nGyX
-        AvgGyY = AvgGyY + nGyY
-        AvgGyZ = AvgGyZ + nGyZ
-        N = N+1
-
-    AvgAcX = AvgAcX/N
-    AvgAcY = AvgAcY/N
-    AvgAcZ = AvgAcZ/N
-    AvgGyX = AvgGyX/N
-    AvgGyY = AvgGyY/N
-    AvgGyZ = AvgGyZ/N
-
-    
-    setGyroXoffset = AvgGyX
-    setGyroYoffset = AvgGyY
-    setGyroZoffset = AvgGyZ
-    setAccXoffset = AvgAcX
-    setAccYoffset = AvgAcY
-    setAccZoffset = -16364+AvgAcZ
-
-    rtnVal = {"GyXoffset": setGyroXoffset,"GyYoffset": setGyroYoffset, "GyZoffset": setGyroZoffset,
-            "AcXoffset": setAccXoffset, "AcYoffset": setAccYoffset, "AcZoffset": setAccZoffset}
-
-    return rtnVal
-
-
 #############################################################################################
 #Pin definitions for PWM and Led
 #Defining pins for pwm
@@ -340,7 +154,7 @@ pwmD6.duty(0)
 
 
 Led = machine.Pin(2,machine.Pin.OUT) ## LED used to show the robot is Conneceted and functioning
-Led.low()
+Led.off()
 ##############################################################################################
 
 
@@ -374,7 +188,9 @@ GyZoffset = 78.57318
 #Some variables
 pulse = 0
 o_dot = 0
+ms = 0
+f = open("write_file.txt","w")
 #Timer
-tim = machine.Timer(-1)
-tim.init(period=100,mode=machine.Timer.PERIODIC,callback=ang_vel)
+#tim = machine.Timer(-1)
+#tim.init(period=100,mode=machine.Timer.PERIODIC,callback=ang_vel)
 
