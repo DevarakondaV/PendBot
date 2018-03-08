@@ -1,6 +1,8 @@
 import machine
 import time
-from Icom import *
+import micropython
+#from Icom import *
+micropython.alloc_emergency_exception_buf(100)
 """
 ""This file defines the functions and variables responsible for complete control of the robot.
 ""
@@ -16,7 +18,8 @@ from Icom import *
 def moveRobot(dcycle):
     global pwmD5    #Forwad Pin right
     global pwmD6    #Backward Pin Right
-    global f
+    global o_dots
+    global mss
 
     tim = machine.Timer(-1)
     tim.init(period=100,mode=machine.Timer.PERIODIC,callback=ang_vel)
@@ -32,16 +35,23 @@ def moveRobot(dcycle):
     #Will run for 3 seconds and Write to File with the name dcycle
     #write_to_file(dcycle)
 
-    write_omg_file(dcycle)
-
-    #After 3 seconds. Return robot to standstill
+    ms_lim = time.ticks_ms()
+    po = 0
+    while(ms_lim+3000 > time.ticks_ms()):
+        po = po+1
+    #After 5 seconds. Return robot to standstill
     pwmD5.duty(0)
     pwmD6.duty(0)
-
-
-    tim.deinit()
-    f.close()
     
+    tim.deinit()
+
+
+    #f = open(str(dcycle)+".txt","w")
+    #for i in range(len(o_dots)):
+        #f.write(str(mss[i])+"\t"+str(o_dots)+"\n")
+
+    #f.close()
+    ms = 0
     
 
     
@@ -59,12 +69,11 @@ def ang_vel(tmr):
     global pulse
     global o_dot
     global ms
-    global f
 
     #o_dot = ((pulse<<2)*3.14)/20.0
     ms = ms+1
     o_dot = (3.14*pulse)
-    f.write(str(ms)+"\t"+str(o_dot)+"\n")
+    print(ms,o_dot)
     pulse = 0
 
 """
@@ -76,6 +85,9 @@ def DeactivatePins():
 
     pwmD5.deinit()
     pwmD6.deinit()
+
+
+
 
 
 """
@@ -94,16 +106,6 @@ def flash_led(ntimes):
         time.sleep_ms(500)
         Led.high()
         ntimes = ntimes-1
-
-
-def write_omg_file(FileName):
-    global o_dot 
-
-    ms_tk = time.ticks_ms();
-    p = 0;
-    while(ms_tk+5000 > time.ticks_ms()):
-        p = p+1
-    return mss,o_dots
 
 """
 "" Function prints accel readings
@@ -189,7 +191,8 @@ GyZoffset = 78.57318
 pulse = 0
 o_dot = 0
 ms = 0
-f = open("write_file.txt","w")
+o_dots = []
+mss = []
 #Timer
 #tim = machine.Timer(-1)
 #tim.init(period=100,mode=machine.Timer.PERIODIC,callback=ang_vel)
