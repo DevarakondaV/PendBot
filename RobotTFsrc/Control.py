@@ -16,20 +16,23 @@ TFN = [0,1]
 TFD = [(l*(m_1+m_2))-(l*m_2),0,-g*(m_1+m_2)]
 
 #CN = [1,2,1]
-CN = [1,2,2]
-#CD = [3,3,2]
-CD = [1,0]
+CN = [3,5,3]
+#CN = [1]
+CD = [1]
 
 con = tf(CN,CD)
 TF = tf(TFN,TFD)
 
-TF = series(con,TF)
-sys_p = pole(TF)
-p_real = [sys_p[0].real,sys_p[1].real]
-p_imag = [sys_p[0].imag,sys_p[1].imag]
+#3.763
+#TF = series(con,TF)
+#sys_p = pole(TF)
 
-a,b = rlocus(TF)
+#a,b = rlocus(TF)
 
+TF = feedback(con,TF)
+#a,b = rlocus(TF)
+The,T = impulse(TF)
+plt.plot(T,The)
 plt.show()
 #print(a,b)
 #plt.plot(a[:,0],b)
