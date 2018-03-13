@@ -26,15 +26,8 @@ WTF = tf(WTFN,WTFD)
 print(TF)
 print(WTF)
 
-<<<<<<< HEAD
 CN = [1,20,100]
 CD = [1,0]
-=======
-#CN = [1,2,1]
-CN = [3,5,3]
-#CN = [1]
-CD = [1]
->>>>>>> 92451f9854abcdabb7f57d89c7985ebc98574c08
 
 CTF = 8*tf(CN,CD)
 
@@ -62,30 +55,4 @@ TFD = [(l*(m_1+m_2))-(l*m_2),0,-g*(m_1+m_2)]
 WTF = tf(WTFN,WTFD)
 TF = tf(TFN,TFD)
 
-<<<<<<< HEAD
-CN = [1,13,30]
-CD = [1,0]
-
-CTF = tf(CN,CD)
-
-SysTF = series(WTF,TF)
-print(SysTF)
-SysTF = series(CTF,SysTF)
-print(SysTF)
-print(pole(SysTF))
-print(zero(SysTF))
-a,b = rlocus(SysTF)
-=======
-#3.763
-#TF = series(con,TF)
-#sys_p = pole(TF)
-
-#a,b = rlocus(TF)
-
-TF = feedback(con,TF)
-#a,b = rlocus(TF)
-The,T = impulse(TF)
-plt.plot(T,The)
->>>>>>> 92451f9854abcdabb7f57d89c7985ebc98574c08
-plt.show()
 """
