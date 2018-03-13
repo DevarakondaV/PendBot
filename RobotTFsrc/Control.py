@@ -9,30 +9,63 @@ g = 9.81
 l = (30.5/2.0)/100.0    #Pendulum COG length
 k = 0.145       #motor constant
 R = 3.0/100     #Radius Wheel
+m_wheel = 25.0/1000
+I = m_wheel*(np.power(R,2))
 
 
+#Testing
+TFN = [0,.102]
+TFD = [0.0446,0,-1]
+
+WTFN = [0.391,0]
+WTFD = [.5,1]
+
+TF = tf(TFN,TFD)
+WTF = tf(WTFN,WTFD)
+
+print(TF)
+print(WTF)
+
+CN = [1,20,100]
+CD = [1,0]
+
+CTF = 8*tf(CN,CD)
+
+SysTF = series(WTF,TF)
+SysTF = series(CTF,SysTF)
+SysTF  = feedback(SysTF,2.35)
+print(SysTF)
+#a,b = rlocus(SysTF)
+#plt.show()
+The,T = step(SysTF)
+plt.plot(T,The)
+plt.show()
+
+
+
+
+"""
+#Wheel Actuator TF
+WTFN = [I/R,0]
+WTFD = [0,1]
 
 TFN = [0,1]
 TFD = [(l*(m_1+m_2))-(l*m_2),0,-g*(m_1+m_2)]
 
-#CN = [1,2,1]
-CN = [1,2,2]
-#CD = [3,3,2]
-CD = [1,0]
-
-con = tf(CN,CD)
+WTF = tf(WTFN,WTFD)
 TF = tf(TFN,TFD)
 
-TF = series(con,TF)
-sys_p = pole(TF)
-p_real = [sys_p[0].real,sys_p[1].real]
-p_imag = [sys_p[0].imag,sys_p[1].imag]
+CN = [1,13,30]
+CD = [1,0]
 
-a,b = rlocus(TF)
+CTF = tf(CN,CD)
 
+SysTF = series(WTF,TF)
+print(SysTF)
+SysTF = series(CTF,SysTF)
+print(SysTF)
+print(pole(SysTF))
+print(zero(SysTF))
+a,b = rlocus(SysTF)
 plt.show()
-#print(a,b)
-#plt.plot(a[:,0],b)
-#plt.show()
-#plt.plot(T,The)
-#plt.show()
+"""
