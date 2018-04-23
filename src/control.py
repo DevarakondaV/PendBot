@@ -1,36 +1,8 @@
 import machine
 import time
-from Icom import *
-"""
-Pin Labels
-
-#Pin Definitions
-D0 = 16;
-D1 = 5;
-D2 = 4;
-D3 = 0;
-D4 = 2;
-D5 = 14;
-D6 = 12;
-D7 = 13;
-D8 = 15;
-D9 = 3;
-D10 = 1;
-
-
-PD5 = Pin(14,Pin.OUT) Right Wheel
-PD6 = Pin(12,Pin.OUT) Right Wheel
-PD7 = Pin(13,Pin.OUT) Left Wheel
-PD9 = Pin(3,Pin.OUT)  Left Wheel
-PD10 = Pin(1,Pin.OUT) Enable Pin
-
-
-pwmD5
-pwmD6
-pwmD7
-pwmD9
-"""
-
+import micropython
+#from Icom import *
+micropython.alloc_emergency_exception_buf(100)
 """
 ""This file defines the functions and variables responsible for complete control of the robot.
 ""
@@ -40,26 +12,17 @@ pwmD9
 #Some Functions
 
 """
-""Enables Pins on Motor Driver
-""Val: 1 means Enables 0 means disables
-"""
-def EnOrDis(val):
-    global PD7
-    if val is 1:
-        PD7.high()
-    else:
-        PD7.low()
-
-
-
-"""
 "" Moves Robot forward or backward
 "" if dcycle<0 move backwards dycle>0 move forward
 """
 def moveRobot(dcycle):
     global pwmD5    #Forwad Pin right
     global pwmD6    #Backward Pin Right
-    
+    global o_dots
+    global mss
+
+    tim = machine.Timer(-1)
+    tim.init(period=100,mode=machine.Timer.PERIODIC,callback=ang_vel)
 
     if dcycle < 0:
         dcycle = abs(dcycle)
@@ -70,12 +33,48 @@ def moveRobot(dcycle):
         pwmD6.duty(0)
 
     #Will run for 3 seconds and Write to File with the name dcycle
-    write_to_file(dcycle)
-    
-    #After 3 seconds. Return robot to standstill
+    #write_to_file(dcycle)
+
+    ms_lim = time.ticks_ms()
+    po = 0
+    while(ms_lim+3000 > time.ticks_ms()):
+        po = po+1
+    #After 5 seconds. Return robot to standstill
     pwmD5.duty(0)
     pwmD6.duty(0)
+    
+    tim.deinit()
 
+
+    #f = open(str(dcycle)+".txt","w")
+    #for i in range(len(o_dots)):
+        #f.write(str(mss[i])+"\t"+str(o_dots)+"\n")
+
+    #f.close()
+    ms = 0
+    
+
+    
+"""
+"" Pin Interrump
+"""
+def interrupt_callback(p):
+    global pulse
+    pulse = pulse + 1
+
+"""
+"" Angular velocity Calc
+"""
+def ang_vel(tmr):
+    global pulse
+    global o_dot
+    global ms
+
+    #o_dot = ((pulse<<2)*3.14)/20.0
+    ms = ms+1
+    o_dot = (3.14*pulse)
+    print(ms,o_dot)
+    pulse = 0
 
 """
 "" Deactivate pwm Pins
@@ -86,6 +85,9 @@ def DeactivatePins():
 
     pwmD5.deinit()
     pwmD6.deinit()
+
+
+
 
 
 """
@@ -105,57 +107,34 @@ def flash_led(ntimes):
         Led.high()
         ntimes = ntimes-1
 
-
-
 """
-"" Writes data values to file with filename
-""
+"" Function prints accel readings
 """
-def write_to_file(FileName):
-    global Led
+def print_accel(ml):
+    global AcXoffset, AcYoffset, AcZoffset, GyXoffset, GyYoffset, GyZoffset
     global accel
 
-    #Lighting the Led
-    Led.low()
 
-    #Preparing File to Read
-    f = open(str(FileName)+".txt",'w')
-    f.write("#############################################################################################\n")
-    f.write("File Contains Acceleration Data\n")
-    f.write("Accelerations are given as a multiple of g\n")
-    f.write("------------------------------------------\n")
-    f.write("First line is duty cycle\n")
-    f.write("Second line is time stamp\n")
-    f.write("Rest are accelerations\n")
-    f.write("#############################################################################################\n")
-    f.write("Dcycle\t\tTimeStamp\t\tAx\t\tAy\t\tAz\n")
+    cfac = 16384
+    while(True):
+        time.sleep_ms(ml)
+        vals = accel.get_values()
+        AcX = vals["AcX"]-AcXoffset
+        AcY = vals["AcY"]-AcYoffset
+        AcZ = vals["AcZ"]-AcZoffset
+        GyX = vals["GyX"]-GyXoffset
+        GyY = vals["GyY"]-GyYoffset
+        GyZ = vals["GyZ"]-GyZoffset
 
-    #Read for 3 seconds
-    ms = time.ticks_ms()
-    read_ms = ms+100 #For reading every tenth of a second
-    ms = ms+3000
-    aconv = 16384 #Conversion factor for readings from accelerometer
-    t = 0 #Counter
-    while(ms > time.ticks_ms()):
+        AcX = AcX/cfac
+        AcY = AcY/cfac
+        AcZ = AcZ/cfac
+        GyX = GyX/131
+        GyY = GyY/131
+        GyZ = GyZ/131
 
-        #Read from accel every tenth of a minute
-        if (read_ms == time.ticks_ms()):
-            readings = accel.get_values()
-            Ax = readings['AcX']
-            Ay = readings['AcY']
-            Az = readings['AcZ']
-            Ax = Ax/aconv
-            Ay = Ay/aconv
-            Az = Az/aconv
+        print("AcX: {:5.3f}\tAcY: {:5.3f}\tAcZ: {:5.3f}\tGyX: {:5.3f}\tGyY: {:5.3f}\tGyZ: {:5.3f}".format(AcX,AcY,AcZ,GyX,GyY,GyZ))
 
-            write_val = str(FileName)+"\t\t"+str(t)+"\t\t{:5.3f}\t\t{:5.3f}\t\t{:5.3f}\n".format(Ax,Ay,Az)+"\n"
-            f.write(write_val)
-            read_ms = read_ms+100
-            t = t+.1
-
-    f.close()
-    #Turing Led off
-    Led.high()
 
 
 #############################################################################################
@@ -163,6 +142,8 @@ def write_to_file(FileName):
 #Defining pins for pwm
 PD5 = machine.Pin(14) #RIGHT WHEEL PWM
 PD6 = machine.Pin(12) #RIGHT WHEEL PWM
+PD7 = machine.Pin(13,machine.Pin.IN) #WHEEL SENSOR
+PD7.irq(trigger=machine.Pin.IRQ_FALLING,handler=interrupt_callback)
 
 pwmD5 = machine.PWM(PD5)
 pwmD6 = machine.PWM(PD6)
@@ -175,25 +156,44 @@ pwmD6.duty(0)
 
 
 Led = machine.Pin(2,machine.Pin.OUT) ## LED used to show the robot is Conneceted and functioning
-Led.low()
+Led.off()
 ##############################################################################################
 
 
 ##############################################################################################
 #I2C Communication Defintions
 #I2C com 
-i2c = machine.I2C(scl=machine.Pin(4),sda=Pin(5),freq=100000)
+#i2c = machine.I2C(scl=machine.Pin(4),sda=Pin(5),freq=100000)
 #I2C Address
-i2cDevicesAddr = i2c.scan()
+#i2cDevicesAddr = i2c.scan()
 
 ## IF there are no I2C devices,
 ## Flash LED twice and exit program
-if (len(i2cDevicesAddr) == 0):
-    flash_led(2)
-else:
-    accAddr = i2cDevicesAddr[0]
-    flash_led(3)
+#if (len(i2cDevicesAddr) == 0):
+#    flash_led(2)
+#else:
+#    accAddr = i2cDevicesAddr[0]
+#    flash_led(3)
 
 # accelerometer class
-accel = acc(i2c,accAddr)
+#accel = acc(i2c,accAddr)
+AcZoffset = 748.4766
+AcXoffset = -291.7535
+AcYoffset = -227.5296
+GyXoffset = -334.9083
+GyYoffset = 139.0406
+GyZoffset = 78.57318
 ##############################################################################################
+
+
+##############################################################################################
+#Some variables
+pulse = 0
+o_dot = 0
+ms = 0
+o_dots = []
+mss = []
+#Timer
+#tim = machine.Timer(-1)
+#tim.init(period=100,mode=machine.Timer.PERIODIC,callback=ang_vel)
+
