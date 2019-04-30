@@ -44,7 +44,7 @@ def plot_states(t,yout):
     plt.plot(t,yout[6])
     plt.title("Current")
     
-    plt.show()
+    plt.savefig('plots.png')
 
 
     
@@ -68,19 +68,18 @@ R = .13691942
 # STATE SPACE MODEL
 
 A = np.array(
-    [[0,    1,  0,                  0,  0,  0,                                          0],
-     [0,    0,  m2*g/(m1),          0,  0,  -(Imw*b)/(n*m1*Rw*J),   -(Imw*K)/(n*m1*Rw*J)],
-     [0,    0,  0,                  1,  0,  0,                              0],
-     [0,    0,  (m1+m2)*g/(m1*l),   0,  0,  -(Imw*b)/(n*m1*Rw*J*l), -(Imw*K)/(n*m1*Rw*J*l)],   
-     [0,    0,  0,                  0,  0,  1,                              0],
-     [0,    0,  0,                  0,  0,  -b/J,                           K/J],
-     [0,    0,  0,                  0,  0,  -K/J,                           -R/L]])
+    [[0,    1,  0,                  0,  0,  0],
+     [0,    0,  m2*g/(m1),          0,  -(Imw*b)/(n*m1*Rw*J),   (Imw*K)/(n*m1*Rw*J)],
+     [0,    0,  0,                  1,  0,  0],
+     [0,    0,  (m1+m2)*g/(m1*l),   0,  -(Imw*b)/(n*m1*Rw*J*l), (Imw*K)/(n*m1*Rw*J*l)],   
+     [0,    0,  0,                  0,  -b/J,                           K/J],
+     [0,    0,  0,                  0,  -K/J,                           -R/L]])
 
-B = np.array([0,0,0,0,0,0,1/L]).reshape(7,1)
-B = np.array([0,0,0,0,0,0,1/L]).reshape(7,1)
-C = np.array([[1,0,0,0,0,0,0],[0,0,1,0,0,0,0]]).reshape(7,2)
-C = np.identity(7)
-D = np.array([0,0,0,0,0,0,0]).reshape(7,1)
+B = np.array([0,0,0,0,0,1/L]).reshape(6,1)
+B = np.array([0,0,0,0,0,1/L]).reshape(6,1)
+C = np.array([[1,0,0,0,0,0],[0,0,1,0,0,0]]).reshape(6,2)
+C = np.identity(6)
+D = np.array([0,0,0,0,0,0]).reshape(6,1)
 
 
 def test_controllability(b_mat, a_mat):
@@ -140,9 +139,32 @@ def sys_res(state_gains,A,B,C,D):
 #sys_res(K, A, B, C, D)
 
 
-Q = np.identity(7)
-R = .001
-K,S,E = get_control_gains(A,B,Q,R)
+AA = np.array(
+    [[0,    1,  0,                  0],
+     [0,    0, -m2*g/(m1),          0],
+     [0,    0,  0,                  1],
+     [0,    0,  -(m1+m2)*g/(m1*l),  0]])
+BB = np.array([0,1/m1,0,1/(L*m1)]).reshape(4,1)
 
-print(k)
-exit() 
+
+
+
+#print(AA)
+#C = ctrb(AA,BB)
+#print(len(AA),np.linalg.matrix_rank(C))
+#exit()
+#print(len(A))
+#print(np.linalg.eig(A)[0][:])
+#exit()
+
+Q = [[1, 0, 0, 0, 0, 0],
+     [0, 1, 0, 0, 0, 0],
+     [0 , 0, 100, 0, 0, 0],
+     [0 , 0, 0, 100, 0, 0],
+     [0 , 0, 0, 0, 10, 0],
+     [0 , 0, 0, 0, 0, 10]]
+R = .01
+Q = np.array(Q)
+K,S,E = get_control_gains(A,B,Q,R)
+print(K)
+#test_controllability(B,A)

@@ -1,37 +1,66 @@
-#ifndef __ROBOT_H__
-#define __ROBOT_H__
+// robot.h
+//
+// last-edit-by: <> 
+//
+// Description:
+//
+//////////////////////////////////////////////////////////////////////
+
+#ifndef ROBOT_H
+#define ROBOT_H 1
 
 
+#include "PubSub.h"
+#include "Topic.h"
 
-class mDriver;
-class accelerometer;
-class controller;
-
-
-class robot
+class MotorV : public Topic
 {
 public:
-  robot(int * pins,int count_pins);
-  ~robot();
-
-
-  void run();
-  
-  
+  MotorV(){};
+  ~MotorV(){};
+  string get_name();
+  void set_package_value(double package);
+  double get_package_value();
 private:
-
-  /* Components of the robot */
-  controller * m_con; // 0 pins
-  mDriver * m_driver; // requires 6 pins
-  accelerometer * m_acc; // requires 6 pins
-  
-    
+  string name = "MotorV";
+  double package = 0;
 };
 
 
 
-#endif
+class robot : public Publisher, public Subscriber
+{
+public:
+  robot(int * pins,int count_pins);
+  ~robot();
+  void update(Publisher* who,Topic * topic = 0);
+
+  void run(double accV);
+  double calc_new_error(double accV);
+
+  void handle_wifi(Topic * topic);
+  void handle_acc(Topic * topic);  
   
+private:
+  
+  double position_x;
+  MotorV motorV;
+
+};
+
+
+#endif // ROBOT_H
+//////////////////////////////////////////////////////////////////////
+// $Log:$
+//
+
+
+
+
+
+
+
+
 #ifdef __TEST__
 
 class rtest {

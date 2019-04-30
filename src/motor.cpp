@@ -1,45 +1,112 @@
-#include "motor.h"
-#include "rasp.h"
+// motor.cpp
+//
+// last-edit-by: <> 
+// 
+// Description:
+//
+//////////////////////////////////////////////////////////////////////
+
+#include <iostream>
+#include "../include/motor.h"
+#include <wiringPi.h>
+#include <softPwm.h>
+
+motor::motor(int pin1, int pin2,int pin3,int pin4){
+  /*
+    Motor constructor
+    
+    args:
+    pin1:	GPIO Pin on rasp
+    pin2:	GPIO Pin on rasp
+  */
 
 
-motor::motor(const rasp& m_rasp, int pin1,int pin2)
-{
-	/*
-	Motor constructor
+  this->CPin = pin1;
+  this->CCPin  = pin2;
+  this->PWMPin = pin3;
+  this->EnPin = pin4;
 
-	args:
-		pin1:	GPIO Pin on rasp
-		pin2:	GPIO Pin on rasp
-	*/
-	voltage = 0;
-	velocity = 0;
-	rasp_pin1 = pin1;
-	rasp_pin2 = pin2;
-	this->m_rasp = & m_rasp;
+  // Enabling pins
+  pinMode(this->CPin,OUTPUT);
+  pinMode(this->CCPin,OUTPUT);
+  pinMode(this->EnPin,OUTPUT);
+  if (!softPwnCreate(this->PWMPin,0,100)){
+    cout << softPwn::errno;
+  }
+
+  //Other variables
+  this->enabled = false;
 }
-
 
 motor::~motor()
 {
-	delete m_rasp;
+	
 }
+
+void motor::update(Publisher* who,Topic * topic){
+  /*
+    Functions handles all the topics related to
+    motor
+  */
+  
+  std::string topic_name = topic->get_name();
+
+  if (topic_name == "MotorV")
+    this->set_voltage(topic->get_package_value());
+    
+}
+
 
 void motor::set_voltage(double new_voltage)
 {
-	/* 
-	Function sets new voltage and calculates the 
-	new voltage
-	
-	args:
-		new_voltage:	double. New voltage
+  /* 
+     Function sets new voltage and calculates the 
+     new voltage
+     
+     args:
+     new_voltage:	double. New voltage
+     
+     returns:
+     null
+     
+  */
 
-	returns:
-		null
+  //First Enable motor if not enabled
+  if (!this->enabled){
+    digitalWrite(this->EnPin);
+    this->enabled = true;
+    this->direction = 1; // By default always enabled CCW
+  }
 
-	*/
-	voltage = new_voltage;
-	const int count_pins = 2;
-	int pins[count_pins] = { rasp_pin1, rasp_pin2 };
-	m_rasp->set_voltage_on_pins(pins, count_pins,new_voltage);
+
+ //check direction  
+  //CCW
+  if (this->direction && new_voltage < 0){
+    digitalWrite(this->CWPin,LOW);
+    digitalWrite(this->CCWPin,HIGH);
+    new_voltage *= -1;
+    this->direction = 0;
+  } else if ( ! this->direction && new_voltage > 0)  { //CW
+    digitalWrite(this->CWPin,HIGH);
+    digitalWrite(this->CCWPin,LOW);
+    this->direction = 1 ;
+  }  
+	 
+
+  softPwmWrite(this->PWMPin,new_voltage);
+ 
 }
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////
+// $Log:$
+//
+
+
+  
 

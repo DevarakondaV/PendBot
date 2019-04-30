@@ -1,47 +1,51 @@
-#pragma once
+// motor.h
+//
+// last-edit-by: <> 
+//
+// Description:
+//
+//////////////////////////////////////////////////////////////////////
+
+#ifndef MOTOR_H
+#define MOTOR_H 1
+
+
 #include <vector>
+#include "../include/PubSub.h"
+#include "../include/Topic.h"
 
 //Forward declare classes
-class rasp;
 
 
-class motor
+
+class motor : public Subscriber
 {
 public:
-	motor(const rasp& m_rasp,int pin1,int pin2);
-	~motor();
-
-	//getters and setters
-	double get_velocity() { return velocity; }
-	void set_voltage(double new_voltage);
-
+  motor(int pin1,int pin2,int pin3,int pin4);
+  ~motor();
+  void update(Publisher* who,Topic * topic = 0);
+  
+  //getters and setters
+  void set_voltage(double new_voltage);
 private:
+  
+  int CPin;
+  int CCPin;
+  int PWMPin;
+  int EnPin;
 
-	//private functions
-
-
-	//raspberry interactor
-	const rasp * m_rasp;
-
-	//Changing params
-	double voltage;
-	double velocity;
-
-	int rasp_pin1;
-	int rasp_pin2;
-
-
-	////Motor constant params
-	//const float K = 0.58034283;			//Combination of motor constants
-	//const float J = 0.12919318;			//Moment of inertia of rotor
-	//const float L = 0.25841064;			//Electrical inductance
-	//const float R = 0.13691642;			//Electrical resistance
-	//const float b = 0.6356482;			//Motor viscous  friction constant
-	//
-	//// variables for wheel
-	//// in metric units
-	//const float wheel_diameter = .05;	
-	//const float wheel_mass = .004;
-	
+  bool enabled;
+  int direction; //1 for CW, 0 for CCW
+   
+ 
 };
+
+
+#endif // MOTOR_H
+//////////////////////////////////////////////////////////////////////
+// $Log:$
+//
+
+
+
 

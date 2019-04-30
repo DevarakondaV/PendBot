@@ -1,13 +1,23 @@
+// robot.cpp
+//
+// last-edit-by: <> 
+// 
+// Description:
+//
+//////////////////////////////////////////////////////////////////////
+
+
 #include <stdio.h>
 #include <assert.h>
-#include "robot.h"
+#include "../include/robot.h"
+
 
 
 
 
 /*
   pre: count_pin == 12
-  post: m_con,m_driver,m_acc != nullptr
+  post: m_con,m_driver,m_acc != nullptr , position_x = 0.0, motorV Defined.
 */
 robot::robot(int * pins, int count_pins)
 {
@@ -17,61 +27,74 @@ robot::robot(int * pins, int count_pins)
      pins: Array contain pins on rsp
      count_pins: lenght of the array
   */
-  assert(
-	//Constructing required objects
-	
-	
+  assert(count_pins != 12);
+  assert(pins != nullptr);
+//Constructing required objects
+
+  position_x = 0.0;
+  motorV = MotorV();
 
 }
 
-void robot::get_motor_voltage_inputs(double error,double & left_motor, double & right_motor)
-{
-	/*
-	Function  gets left right wheel inputs according to controller
-	args:
-		left_wheel:		Reference double. Left wheel controller output
-		right_wheel:	Reference double. Right wheel controller output
+void robot::update(Publisher * who,Topic * topic) {
 
-	returns:
-		null
-	*/
-
-	auto voltage = robot_controller->calculate_input(error);
-	left_motor = right_motor = voltage;
+  if (topic->get_name() == "accV") {
+    this->run(topic->get_package_value());
+  }
 }
 
-void robot::set_motor_voltage(double & left_motor, double & right_motor)
-{
-	motorL->set_voltage(left_motor);
-	motorR->set_voltage(right_motor);
+
+void robot::handle_wifi(Topic * topic){
+
 }
 
-void robot::periodic_function()
-{
-	//Get error for controller input
-	double error = calc_error();	//This function reads gyro for pendulum
-	
-	//get controller signal
-	double input = robot_controller->calculate_input(error);
-	
-	//send controller signal to motors
-	motorL->set_voltage(input);
-	motorR->set_voltage(input);
+void robot::handle_acc(Topic * topic){
+
 }
 
 
 robot::~robot()
 {
-  delete m_con,m_driver,m_acc;
+
 }
 
 
+void robot::run(double accV){
+  double new_error = this->calc_new_error(accV);
+  this->motorV.set_package_value(new_error);
+  this->notify(&motorV);
+}
 
+
+double robot::calc_new_error(double accV){
+  if (accV < 0)
+    return -1.0;
+  else
+    return 1.0;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// Topics
+
+string MotorV::get_name(){
+  return this->name;
+}
+
+void MotorV::set_package_value(double val){
+  this->package = val;
+}
+
+double MotorV::get_package_value(){
+  return this->package;
+}
+
+/*
 void robot::run()
 {
 	/*
 	Functions starts the control loop
-	*/
+	
 
 	using namespace std::chrono;
 
@@ -103,12 +126,13 @@ void robot::run()
 	}	
 }
 
-void robot::start_cart_pend_simulation()
-{
+*/
 
-}
 
-double robot::controller::calculate_input(double error)
-{
-	return 0.0;
-}
+//////////////////////////////////////////////////////////////////////
+// $Log:$
+//
+
+
+
+  
